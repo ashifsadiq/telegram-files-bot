@@ -53,11 +53,9 @@ class TelegramWebController extends Controller
         };
 
         if ($chatId) {
-            $reply_markup = $this->telegramHelper->replyKeyboardMarkup();
             $this->telegramHelper->sendMessage([
                 'chat_id'      => $chatId,
                 'text'         => $text,
-                'reply_markup' => $reply_markup,
             ]);
         }
     }

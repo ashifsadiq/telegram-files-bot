@@ -55,7 +55,6 @@ class TelegramHelper
     }
     public function setWebhook($params = [])
     {
-
         $response = $this->telegram->setWebhook($params);
 
         return $response;
