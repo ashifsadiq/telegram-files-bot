@@ -23,5 +23,11 @@ class BotCommandsSeeder extends Seeder
             'reply_type'  => 'text',
             'reply'       => 'Add files to this bot',
         ]);
+        BotCommands::create([
+            'command'     => 'managefolder',
+            'description' => '⚙️ Manage file and folder',
+            'reply_type'  => 'text',
+            'reply'       => '⚙️ Manage file and folder',
+        ]);
     }
 }

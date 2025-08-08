@@ -4,7 +4,6 @@ namespace App\Helpers;
 use App\Http\Controllers\BotCommandsController;
 use App\Models\BotCommands;
 use Illuminate\Http\Request;
-use Telegram\Bot\Api;
 
 class BotCommandHelper
 {
@@ -33,7 +32,7 @@ class BotCommandHelper
                             $replyText .= "/{$command->command} - {$command->description}\n";
                         }
                         $telegramHelper = new TelegramHelper();
-                        $telegramHelper->sendMessage([
+                        return $telegramHelper->sendMessage([
                             'chat_id'    => $chatId,
                             'text'       => $replyText,
                             'parse_mode' => 'HTML',
@@ -45,11 +44,19 @@ class BotCommandHelper
                     $telegramHelper = new TelegramHelper();
                     $telegramHelper->checkSubscription($request);
                     $botCommandsController = new BotCommandsController();
-                    $botCommandsController->getFolders($chatId);
+                    return $botCommandsController->getFolders($chatId);
                 }
                 if ($botCommand->command === 'start') {
                     $telegramHelper = new TelegramHelper();
-                    $telegramHelper->sendMessage([
+                    return $telegramHelper->sendMessage([
+                        'chat_id' => $chatId,
+                        'text'    => $botCommand->reply,
+                    ]);
+                }
+                if ($botCommand->command === 'managefolder') {
+                    $telegramHelper = new TelegramHelper();
+                    $telegramHelper->checkSubscription($request);
+                    return $telegramHelper->sendMessage([
                         'chat_id' => $chatId,
                         'text'    => $botCommand->reply,
                     ]);

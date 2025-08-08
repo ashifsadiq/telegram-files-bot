@@ -2,8 +2,8 @@
 namespace App\Helpers;
 
 use App\Http\Controllers\BotCommandsController;
-use App\Models\CurrentQueue;
 use App\Models\TelegramFolder;
+use App\Models\UploadingQueue;
 use Illuminate\Http\Request;
 use Telegram\Bot\Api;
 use Telegram\Bot\Exceptions\TelegramSDKException;
@@ -179,17 +179,22 @@ class TelegramHelper
                         $botCommandsController->filesAddCurrentQueue(
                             chatId: $chatId,
                             messageId: $message['message_id'],
-                            folderId: var_export($lastPart, true)
+                            folderId: $lastPart
                         );
                         break;
                     }
-
+                case 'folder/done/':{
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->doneUploadingQueueFiles($chatId);
+                        break;
+                    }
                 default: {
                         $botCommandsController = new BotCommandsController();
                         $this->sendMessage([
                             'chat_id' => $chatId,
                             'text'    => "Something gone wrong basePath: $basePath, lastPart: " . var_export($lastPart, true),
                         ]);
+                        break;
                     }
             }
             $this->telegram->answerCallbackQuery(['callback_query_id' => $callback_query['id']]);
@@ -203,22 +208,14 @@ class TelegramHelper
     }
     public function manageTextSend(Request $request)
     {
-        //     'inline_keyboard' => [
-        //     ],
-        // ];
-        // for ($i = 1; $i <= 2; $i++) {
-        //     array_push($keyboard['inline_keyboard'], [
-        //         ['text' => "Button $i", 'callback_data' => "button_$i"],
-        //     ]);
-        // }
         $message           = $request->input('message');
         $chatId            = $message['chat']['id'] ?? null;
         $textGot           = $message['text'];
-        $currentQueueCount = CurrentQueue::where(['user_id' => $chatId])->count();
+        $currentQueueCount = UploadingQueue::where(['user_id' => $chatId])->count();
         if ($currentQueueCount) {
             return $this->telegram->sendMessage([
                 'chat_id' => $chatId,
-                'text'    => 'Please Send Files to add press /stop to stop the process.',
+                'text'    => 'Please Send Files to add press /cancel to stop the process.',
             ]);
         }
         if ($chatId) {
@@ -232,10 +229,28 @@ class TelegramHelper
     }
     public function managePhotoSend(Request $request)
     {
-        $message = $request->input('message');
-        $chatId  = $message['chat']['id'] ?? null;
+        $type           = 'photo';
+        $message        = $request->input('message');
+        $chatId         = $message['chat']['id'] ?? null;
+        $uploadingQueue = UploadingQueue::where(['user_id' => $chatId])->first();
+        $photo          = end($message[$type]);
+        $caption        = $message['caption'] ?? null;
+        if ($uploadingQueue && isset($photo)) {
+            $saveUploadingQueueFiles = new BotCommandsController();
+            return $saveUploadingQueueFiles->saveUploadingQueueFiles(
+                array_merge(
+                    $photo,
+                    [
+                        'caption'             => $caption,
+                        'type'                => $type,
+                        'uploading_queues_id' => $uploadingQueue->id,
+                        'chat_id'             => $chatId,
+                    ]
+                )
+            );
+        }
         if ($chatId) {
-            $this->telegram->sendMessage([
+            return $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text'    => 'managePhotoSend',
             ]);

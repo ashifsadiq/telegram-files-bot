@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('telegram_files', function (Blueprint $table) {
+        Schema::create('uploading_queue_files', function (Blueprint $table) {
             $table->id();
             $table->string('type')->nullable();
             $table->string('file_name')->nullable();
@@ -19,17 +20,11 @@ return new class extends Migration
             $table->string('file_unique_id')->nullable();
             $table->string('file_size')->nullable();
             $table->longText('caption')->nullable();
-            $table->unsignedBigInteger('parent_folder_id')->nullable();
-            $table->string('user_id');
-            $table->foreign('parent_folder_id')
-                ->references('id')
-                ->on('telegram_folders')
-                ->onDelete('cascade'); // <- Important
-                                   // $table->foreignId('user_id')->constrained()->onDelete('cascade');
-                                   // or if your users table uses a custom name:
-            $table->foreign('user_id')->references('user_id')->on('telegram_users')->onDelete('cascade');
-
+            $table->foreignId('uploading_queues_id')->constrained()->onDelete('cascade');
             $table->timestamps();
+            //    or if your users table uses a custom name:
+            // $table->string('uploading_queues_id');
+            // $table->foreign('user_id')->references('user_id')->on('telegram_users')->onDelete('cascade');
         });
     }
 
@@ -38,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('telegram_files');
+        Schema::dropIfExists('uploading_queue_files');
     }
 };
