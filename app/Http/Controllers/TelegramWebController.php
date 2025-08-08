@@ -4,64 +4,61 @@ namespace App\Http\Controllers;
 use App\Helpers\TelegramHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Telegram\Bot\Api;
 
 class TelegramWebController extends Controller
 {
-    protected $telegramHelper;
     public function __construct()
     {
-        $this->telegramHelper = new TelegramHelper();
     }
-    public function bot(Request $request)
+    public function bot(Request $request): true|\Illuminate\Http\JsonResponse
     {
-        \Log::info('Incoming telegram update:', $request->all());
+        // \Log::info('Incoming telegram update:', $request->all());
+        try {
+            $message        = $request->input('message') ?? $request->input('edited_message');
+            $telegramHelper = new TelegramHelper();
+            if (isset($message['entities'][0]['type']) && ($message['entities'][0]['type'] == 'bot_command')) {
+                $telegramHelper->handleBotCommands($request);
+                return true;
+            }
 
-        $message = $request->input('message');
+            $telegramHelper->handleCallbackQuery($request);
+            if (! $message) {
+                \Log::warning('No message or edited_message found in update.');
+                return response()->json(['status' => 'ignored'], 200);
+            }
 
-        if (isset($message['text'])) {
-            $type = 'text';
-        } elseif (isset($message['photo'])) {
-            $type = 'photo';
-        } elseif (isset($message['video'])) {
-            $type = 'video';
-        } elseif (isset($message['document'])) {
-            $type = 'document';
-        } elseif (isset($message['audio'])) {
-            $type = 'audio';
-        } elseif (isset($message['voice'])) {
-            $type = 'voice';
-        } elseif (isset($message['sticker'])) {
-            $type = 'sticker';
-        } elseif (isset($message['location'])) {
-            $type = 'location';
-        } else {
+            $typeMap = [
+                'text'     => 'manageTextSend',
+                'photo'    => 'managePhotoSend',
+                'video'    => 'manageVideoSend',
+                'document' => 'manageDocumentSend',
+                'audio'    => 'manageAudioSend',
+                'voice'    => 'manageVoiceSend',
+                'sticker'  => 'manageStickerSend',
+                'location' => 'manageLocationSend',
+            ];
+
             $type = 'unknown';
+            foreach ($typeMap as $key => $method) {
+                if (isset($message[$key])) {
+                    $type = $key;
+                    $telegramHelper->$method($request);
+                    break;
+                }
+            }
+            if ($type === 'unknown') {
+                $telegramHelper->manageUnknownSend($request);
+            }
+        } catch (\Throwable $th) {
+            \Log::error('Telegram bot error:', ['exception' => $th]);
         }
-        // Optional: respond accordingly
-        $chatId = $message['chat']['id'] ?? null;
-        $text   = match ($type) {
-            'photo' => 'You send a photo!',
-            'video' => 'You send a video!',
-            'document' => 'You send a document!',
-            'audio' => 'You send a audio!',
-            'voice' => 'You send a voice!',
-            'sticker' => 'You send a sticker!',
-            'location' => 'You send a location!',
-            'text' => "You sent a text: " . $message['text'],
-            default => "Unrecognized message type: $type",
-        };
-
-        if ($chatId) {
-            $this->telegramHelper->sendMessage([
-                'chat_id'      => $chatId,
-                'text'         => $text,
-            ]);
-        }
+        return response()->json(['status' => 'ok']);
     }
+
     public function index()
     {
-        $currentWebHookUrl = $this->telegramHelper->webhookInfo()['url'] ?? 'Currently no webhook is set up';
+        $telegramHelper    = new TelegramHelper();
+        $currentWebHookUrl = $telegramHelper->webhookInfo()['url'] ?? 'Currently no webhook is set up';
         return Inertia::render('Settings/TelegramWebhook', [
             'currentWebHookUrl' => $currentWebHookUrl,
         ]);
@@ -72,11 +69,11 @@ class TelegramWebController extends Controller
      */
     public function store(Request $request)
     {
-        $telegram = new Api(env('BOT_TOKEN'));
+        $telegramHelper = new TelegramHelper();
         $request->validate([
             'base_url' => 'required|url:https',
         ]);
-        $this->telegramHelper->setWebhook([
+        $telegramHelper->setWebhook([
             'url' => $request->base_url . 'api/telegram/webhooks/inbound',
         ]);
         return [
@@ -106,7 +103,8 @@ class TelegramWebController extends Controller
      */
     public function destroy()
     {
-        $this->telegramHelper->deleteWebhook();
+        $telegramHelper = new TelegramHelper();
+        $telegramHelper->deleteWebhook();
         return [
             'success' => true,
             'message' => "Webhook deleted successfully",

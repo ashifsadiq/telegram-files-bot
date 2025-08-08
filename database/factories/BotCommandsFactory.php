@@ -5,9 +5,9 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\TelegramFolder>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\BotCommands>
  */
-class TelegramFolderFactory extends Factory
+class BotCommandsFactory extends Factory
 {
     /**
      * Define the model's default state.

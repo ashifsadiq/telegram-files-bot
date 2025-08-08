@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('telegram_folders', function (Blueprint $table) {
+        Schema::create('uploading_queues', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->boolean('sharable')->default(true);
-
-            // Self-referencing foreign key for parent folder
             $table->unsignedBigInteger('parent_folder_id')->nullable();
             $table->foreign('parent_folder_id')
                 ->references('id')
@@ -29,10 +25,8 @@ return new class extends Migration
                 ->references('user_id')
                 ->on('telegram_users')
                 ->onDelete('cascade');
-
             $table->timestamps();
         });
-
     }
 
     /**
@@ -40,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('telegram_folders');
+        Schema::dropIfExists('uploading_queues');
     }
 };

@@ -28,6 +28,11 @@ const TelegramWebhook = ({ currentWebHookUrl }) => {
             reset()
         }
     }
+    function checkEnter(event) {
+        if (event.key === 'Enter') {
+            handleSubmit(event)
+        }
+    }
     const handleSubmit = async (e) => {
         e.preventDefault();
         setData('isLoading', true)
@@ -67,6 +72,7 @@ const TelegramWebhook = ({ currentWebHookUrl }) => {
                                 onChangeText={value => setData('base_url', value)}
                                 id={'base_url'}
                                 value={data.base_url}
+                                onKeyDown={checkEnter}
                             />
                             {errors.base_url && <div>{errors.base_url}</div>}
                             <div className="flex space-x-2 items-center">

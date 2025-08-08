@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('telegram_users', function (Blueprint $table) {
-            $table->string('user_id')->primary(); // Telegram user_id as PK
-            $table->string('first_name');
-            $table->string('last_name')->nullable();
-            $table->string('username')->nullable();
+        Schema::create('current_queues', function (Blueprint $table) {
+            $table->id();
+            $table->string('user_id');
+            $table->foreign('user_id')
+                ->references('user_id')
+                ->on('telegram_users')
+                ->onDelete('cascade');
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -25,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('telegram_users');
+        Schema::dropIfExists('current_queues');
     }
 };

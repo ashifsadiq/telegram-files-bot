@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('uploading_queues', function (Blueprint $table) {
+        Schema::create('bot_commands', function (Blueprint $table) {
             $table->id();
+            $table->string('command');
+            $table->text('description')->nullable();
+            $table->string('reply_type');
+            $table->string('file_id')->nullable();
+            $table->longText('reply');
             $table->timestamps();
         });
     }
@@ -22,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('uploading_queues');
+        Schema::dropIfExists('bot_commands');
     }
 };

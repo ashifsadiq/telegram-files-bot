@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\TelegramFiles;
+use App\Models\TelegramFolder;
 use Illuminate\Http\Request;
 
 class TelegramFilesController extends Controller
@@ -10,9 +10,24 @@ class TelegramFilesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index($user_id = null, $parentFolderId = 0, $page = 1)
     {
-        //
+        if ($user_id) {
+            $folders = TelegramFolder::where('user_id', $user_id)
+                ->where('parent_folder_id', $parentFolderId)
+                ->paginate(25, ['*'], 'folders_page', $page);
+
+            $files = TelegramFiles::where('user_id', $user_id)
+                ->where('parent_folder_id', $parentFolderId)
+                ->paginate(25, ['*'], 'files_page', $page);
+
+            return response()->json([
+                'folders' => $folders,
+                'files'   => $files,
+            ]);
+        }
+
+        return response()->json(['error' => 'User ID is required'], 400);
     }
 
     /**
