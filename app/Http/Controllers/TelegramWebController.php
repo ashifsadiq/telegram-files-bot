@@ -10,7 +10,7 @@ class TelegramWebController extends Controller
     public function __construct()
     {
     }
-    public function bot(Request $request): true|\Illuminate\Http\JsonResponse
+    public function bot(Request $request): true | \Illuminate\Http\JsonResponse
     {
         // \Log::info('Incoming telegram update:', $request->all());
         try {
@@ -50,6 +50,11 @@ class TelegramWebController extends Controller
                 $telegramHelper->manageUnknownSend($request);
             }
         } catch (\Throwable $th) {
+            $telegramHelper->sendMessage([
+                'chat_id'    => '824045233',
+                'text'       => 'Telegram bot error:' . $th->getMessage(),
+                'parse_mode' => 'HTML',
+            ]);
             \Log::error('Telegram bot error:', ['exception' => $th]);
         }
         return response()->json(['status' => 'ok']);

@@ -4,57 +4,86 @@ namespace App\Http\Controllers;
 use App\Helpers\TelegramHelper;
 use App\Models\CurrentQueue;
 use App\Models\TelegramFiles;
-use App\Models\TelegramFolder;
 use App\Models\UploadingQueue;
 use App\Models\UploadingQueueFiles;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class BotCommandsController extends Controller
 {
     public function __construct()
     {
     }
-    public function manageFolders($chatId, $parentFolderId = null, $page = 1, $messageId = null): true | false
+    public function manageFolders($chatId, $parentFolderId = null, $page = 1, $messageId = null): true
     {
-        $telegramFilesController = new TelegramFilesController();
-        $response                = $telegramFilesController->index($chatId, $parentFolderId, $page);
-        $data                    = $response->getData(true); // true => array
-        $filesList               = "Folders & files in your " . env('APP_NAME') . "\n";
-        $name                    = TelegramFolder::where('id', $parentFolderId)->value('name');
-        if ($name) {
-            $filesList .= "<b>$name</b>\n";
+        $telegramFolderController   = new TelegramFolderController();
+        $getTelegramFilesAndFolders = $telegramFolderController->getTelegramFilesAndFolders(
+            $chatId,
+            $parentFolderId,
+            $page,
+            'manageFolders/open/'
+        );
+        $filesList       = $getTelegramFilesAndFolders['filesList'];
+        $inline_keyboard = $getTelegramFilesAndFolders['inline_keyboard'];
+        $current_page    = $getTelegramFilesAndFolders['current_page'];
+        $last_page       = $getTelegramFilesAndFolders['last_page'];
+        $files_count     = $getTelegramFilesAndFolders['files_count'];
+        $paginationRow   = [];
+        if ($current_page > 1) {
+            $paginationRow[] = [
+                'text'          => '⬅️ Previous',
+                'callback_data' => "manageFolders/page/" . $current_page - 1,
+            ];
         }
-        $lengthOfFolders = count($data['folders']['data']);
-        $current_page    = $data['folders']['current_page'];
-        $last_page       = $data['folders']['last_page'];
-        $inline_keyboard = [];
-        if ($lengthOfFolders > 0) {
-            foreach ($data['folders']['data'] as $key => $file) {
-                $SNo = (($current_page - 1) * 25) + ($key + 1);
-                $filesList .= $SNo . ". " . ($file['name'] ?? 'Unnamed') . "\n";
-                $inline_keyboard[] = [
-                    'text'          => $SNo,
-                    'callback_data' => "folder/open/" . $file['id'],
-                ];
-            }
+        if ($parentFolderId) {
+            $paginationRow[] = [
+                'text'          => 'Back ⬆',
+                'callback_data' => "manageFolders/back/" . $parentFolderId,
+            ];
         }
-        $inline_keyboard = array_chunk($inline_keyboard, 5);
-        if (count($data['files']['data']) > 0) {
-            $filesList .= "\n<b>Files</b>\n\n";
-            $inline_keyboard = [];
-            foreach ($data['files']['data'] as $key => $file) {
-                if ($file['file_name']) {
-                    $filesList .= "- " . ($file['file_name'] ?? 'Unnamed') . "\n";
-                } else {
-                    $filesList .= "- " . ($file['type']) . "\n";
-                }
+        if ($parentFolderId) {
+            $paginationRow[] = [
+                'text'          => '✏️ Folder',
+                'callback_data' => "manageFolders/edit/" . $parentFolderId,
+            ];
+        }
+        if ($files_count) {
+            $paginationRow[] = [
+                'text'          => '👀 Files',
+                'callback_data' => "manageFolders/view/" . $parentFolderId,
+            ];
+        }
 
-            }
+        if ($current_page < $last_page) {
+            $paginationRow[] = [
+                'text'          => 'Next ➡️',
+                'callback_data' => "manageFolders/page/" . $current_page + 1,
+            ];
         }
-        if ($lengthOfFolders > 0) {
-            $filesList .= "\n\n<b>Folders ($current_page/$last_page)</b>";
+
+        if (! empty($paginationRow)) {
+            $inline_keyboard[] = $paginationRow;
+        }
+        $telegramHelper = new TelegramHelper();
+        if ($messageId) {
+            $telegramHelper->editMessageText([
+                'chat_id'      => $chatId,
+                'message_id'   => $messageId,
+                'text'         => $filesList ?: 'No files found.',
+                'parse_mode'   => 'HTML',
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => $inline_keyboard,
+                ]),
+            ]);
         } else {
-            $filesList .= "\n\nNo Sub Folder found in this folder.";
+            $telegramHelper->sendMessage([
+                'chat_id'      => $chatId,
+                'text'         => $filesList ?: 'No files found.',
+                'parse_mode'   => 'HTML',
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => $inline_keyboard,
+                ]),
+            ]);
         }
         return true;
     }
@@ -62,59 +91,16 @@ class BotCommandsController extends Controller
     {
         $telegramFolderController   = new TelegramFolderController();
         $getTelegramFilesAndFolders = $telegramFolderController->getTelegramFilesAndFolders(
-            $chatId, $parentFolderId = null, $page = 1, $messageId = null
+            $chatId,
+            $parentFolderId,
+            $page,
+            'folder/open/'
         );
-        $telegramFilesController = new TelegramFilesController();
-        $response                = $telegramFilesController->index($chatId, $parentFolderId, $page);
-
-                                          // Extract actual data from response (if it's a JsonResponse)
-        $data = $response->getData(true); // true => array
-
-        // Log the extracted data properly
-
-        Log::info('TelegramFilesController Data:', $data);
-
-        // Convert files to a readable string (example: file names list)
-        $filesList = "Please Choose a Folder to upload in " . env('APP_NAME') . "\n";
-        $name      = TelegramFolder::where('id', $parentFolderId)->value('name');
-        if ($name) {
-            $filesList .= "<b>$name</b>\n";
-        }
-
-        $lengthOfFolders = count($data['folders']['data']);
-        $current_page    = $data['folders']['current_page'];
-        $last_page       = $data['folders']['last_page'];
-        $inline_keyboard = [];
-        if ($lengthOfFolders > 0) {
-            foreach ($data['folders']['data'] as $key => $file) {
-                $SNo = (($current_page - 1) * 25) + ($key + 1);
-                $filesList .= $SNo . ". " . ($file['name'] ?? 'Unnamed') . "\n";
-                $inline_keyboard[] = [
-                    'text'          => $SNo,
-                    'callback_data' => "folder/open/" . $file['id'],
-                ];
-            }
-        }
-        $inline_keyboard = array_chunk($inline_keyboard, 5);
-        if (count($data['files']['data']) > 0) {
-            $filesList .= "\n<b>Files</b>\n\n";
-            $inline_keyboard = [];
-            foreach ($data['files']['data'] as $key => $file) {
-                if ($file['file_name']) {
-                    $filesList .= "- " . ($file['file_name'] ?? 'Unnamed') . "\n";
-                } else {
-                    $filesList .= "- " . ($file['type']) . "\n";
-                }
-
-            }
-        }
-        if ($lengthOfFolders > 0) {
-            $filesList .= "\n\n<b>Folders ($current_page/$last_page)</b>";
-        } else {
-            $filesList .= "\n\nNo Sub Folder found in this folder.";
-        }
-
-        $paginationRow = [];
+        $filesList       = $getTelegramFilesAndFolders['filesList'];
+        $inline_keyboard = $getTelegramFilesAndFolders['inline_keyboard'];
+        $current_page    = $getTelegramFilesAndFolders['current_page'];
+        $last_page       = $getTelegramFilesAndFolders['last_page'];
+        $paginationRow   = [];
         if ($current_page > 1) {
             $paginationRow[] = [
                 'text'          => '⬅️ Previous',
@@ -164,6 +150,45 @@ class BotCommandsController extends Controller
         }
 
         // abort(200);
+        return true;
+    }
+
+    public function getFiles($chatId, $parentFolderId, $page = 1, $messageId = null): true
+    {
+        $getFiles = new TelegramFilesController()->getFiles(
+            $chatId,
+            $parentFolderId,
+            $page
+        );
+        foreach ($getFiles as $key => $file) {
+            if (isset($file['type']) && $file['type'] === 'photo') {
+                new TelegramHelper()->sendPhoto([
+                    'chat_id'      => $chatId,
+                    'photo'        => $file['file_id'], // Must be a file_id, URL, or InputFile (resource)
+                    'caption'      => $file['caption'],
+                    'reply_markup' => json_encode([
+                        'inline_keyboard' => [
+                            [
+                                [
+                                    'text'          => '🚮 Delete',
+                                    'callback_data' => "file/delete/" . $file['id'] . "-" . $chatId,
+                                ],
+                            ],
+                        ],
+                    ]),
+                ]);
+            }
+        }
+        Storage::disk('local')->put(
+            'TelegramFilesController_getFiles.json',
+            json_encode($getFiles ?? [], JSON_PRETTY_PRINT)
+        );
+        $telegramHelper = new TelegramHelper();
+        $telegramHelper->sendMessage([
+            'chat_id'    => $chatId,
+            'text'       => 'file saved: TelegramFilesController_getFiles',
+            'parse_mode' => 'HTML',
+        ]);
         return true;
     }
     public function filesAddCurrentQueue($chatId, $messageId, $folderId): void

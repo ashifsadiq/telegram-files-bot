@@ -143,12 +143,13 @@ class TelegramHelper
                 case 'folder/page/':
                     {
                         $botCommandsController = new BotCommandsController();
-                        return $botCommandsController->getFolders(
+                        $botCommandsController->getFolders(
                             $chatId,
                             null,
                             $lastPart,
                             $message['message_id']
                         );
+                        break;
                     }
                 case 'folder/open/':
                     {
@@ -188,6 +189,47 @@ class TelegramHelper
                         $botCommandsController->doneUploadingQueueFiles($chatId);
                         break;
                     }
+                case 'manageFolders/page/':{
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->manageFolders(
+                            $chatId,
+                            null,
+                            $lastPart,
+                            $message['message_id']
+                        );
+                        break;
+                    }
+                case 'manageFolders/back/':{
+                        $botCommandsController = new BotCommandsController();
+                        $folder                = TelegramFolder::find($lastPart);
+                    $botCommandsController->manageFolders(
+                            $chatId,
+                            $folder->parent_folder_id,
+                            null,
+                            $message['message_id']
+                        );
+                        break;
+                    }
+                case 'manageFolders/open/':{
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->manageFolders(
+                            $chatId,
+                            $lastPart,
+                            null,
+                            $message['message_id'],
+                        );
+                        break;
+                    }
+                case 'manageFolders/view/':{
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->getFiles(
+                            $chatId,
+                            $lastPart,
+                            null,
+                            $message['message_id'],
+                        );
+                        break;
+                    }
                 default: {
                         $botCommandsController = new BotCommandsController();
                         $this->sendMessage([
@@ -205,6 +247,32 @@ class TelegramHelper
             // ]);
         }
         // abort(200, 'message');
+    }
+    /**
+     *       'chat_id'                     => '',                      // int|string       - Required. Unique identifier for the target chat or username of the target channel (in the format "@channelusername")
+
+     *       'photo'                       => InputFile::file($file),  // InputFile|string - Required. Photo to send. Pass a file_id as String to send a photo that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a photo from the Internet, or upload a new photo using multipart/form-data.
+
+     *       'caption'                     => '',                      // string           - (Optional). Photo caption (may also be used when resending photos by file_id), 0-200 characters
+
+     *       'parse_mode'                  => '',                      // string           - (Optional). Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption.
+
+     *       'caption_entities'            => '',                      // array            - (Optional). List of special entities that appear in the caption, which can be specified instead of parse_mode
+
+     *       'disable_notification'        => '',                      // bool             - (Optional). Sends the message silently. iOS users will not receive a notification, Android users will receive a notification with no sound.
+
+     *       'protect_content'             => '',                      // bool             - (Optional). Protects the contents of the sent message from forwarding and saving
+
+     *       'reply_to_message_id'         => '',                      // int              - (Optional). If the message is a reply, ID of the original message
+
+     *       'allow_sending_without_reply' => '',                      // bool       - (Optional). Pass True, if the message should be sent even if the specified replied-to message is not found
+
+     *       'reply_markup'                => '',                      // string           - (Optional). Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+
+     */
+    public function sendPhoto($params = [])
+    {
+        $this->telegram->sendPhoto($params);
     }
     public function manageTextSend(Request $request)
     {

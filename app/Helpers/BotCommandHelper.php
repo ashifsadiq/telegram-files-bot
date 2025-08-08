@@ -56,10 +56,8 @@ class BotCommandHelper
                 if ($botCommand->command === 'managefolder') {
                     $telegramHelper = new TelegramHelper();
                     $telegramHelper->checkSubscription($request);
-                    return $telegramHelper->sendMessage([
-                        'chat_id' => $chatId,
-                        'text'    => $botCommand->reply,
-                    ]);
+                    $botCommandsController = new BotCommandsController();
+                    return $botCommandsController->manageFolders($chatId);
                 }
                 // Optional fallback for unknown commands
             }

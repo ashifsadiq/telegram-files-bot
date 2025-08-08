@@ -10,16 +10,16 @@ class TelegramFilesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($user_id = null, $parentFolderId = 0, $page = 1)
+    public function index($user_id = null, $parentFolderId = 0, $page = 1, $perPage = 25)
     {
         if ($user_id) {
             $folders = TelegramFolder::where('user_id', $user_id)
                 ->where('parent_folder_id', $parentFolderId)
-                ->paginate(25, ['*'], 'folders_page', $page);
+                ->paginate($perPage, ['*'], 'folders_page', $page);
 
             $files = TelegramFiles::where('user_id', $user_id)
                 ->where('parent_folder_id', $parentFolderId)
-                ->paginate(25, ['*'], 'files_page', $page);
+                ->paginate($perPage, ['*'], 'files_page', $page);
 
             return response()->json([
                 'folders' => $folders,
@@ -29,13 +29,15 @@ class TelegramFilesController extends Controller
 
         return response()->json(['error' => 'User ID is required'], 400);
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function getFiles($user_id = null, $parentFolderId = 0, $page = 1)
     {
-        //
+        if ($user_id) {
+            $files = TelegramFiles::where('user_id', $user_id)
+                ->where('parent_folder_id', $parentFolderId)
+                ->paginate(25, ['*'], 'files_page', $page);
+
+            return $files;
+        }
     }
 
     /**
