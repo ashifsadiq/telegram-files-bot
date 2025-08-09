@@ -155,8 +155,9 @@ class BotCommandsController extends Controller
 
     public function getFiles($chatId, $parentFolderId, $page = 1, $messageId = null): true
     {
-        $perPage  = 10;
-        $getFiles = new TelegramFilesController()->getFiles(
+        $perPage                 = 10;
+        $telegramFilesController = new TelegramFilesController();
+        $getFiles                = $telegramFilesController->getFiles(
             $chatId,
             $parentFolderId,
             $page,
@@ -173,7 +174,8 @@ class BotCommandsController extends Controller
                         ],
                     ],
                 ];
-                new TelegramHelper()->sendPhoto([
+                $telegramHelper = new TelegramHelper();
+                $telegramHelper->sendPhoto([
                     'chat_id'      => $chatId,
                     'photo'        => $file['file_id'], // Must be a file_id, URL, or InputFile (resource)
                     'caption'      => $file['caption'],
