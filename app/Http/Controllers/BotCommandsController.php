@@ -165,19 +165,20 @@ class BotCommandsController extends Controller
         $data = $getFiles['data'];
         foreach ($data as $key => $file) {
             if (isset($file['type']) && $file['type'] === 'photo') {
+                $inlineKeyboard = [
+                    [
+                        [
+                            'text'          => "🚮 Delete " . $key + 1 . "/" . count($data),
+                            'callback_data' => "file/delete/" . $file['id'] . "-" . $chatId,
+                        ],
+                    ],
+                ];
                 new TelegramHelper()->sendPhoto([
                     'chat_id'      => $chatId,
                     'photo'        => $file['file_id'], // Must be a file_id, URL, or InputFile (resource)
                     'caption'      => $file['caption'],
                     'reply_markup' => json_encode([
-                        'inline_keyboard' => [
-                            [
-                                [
-                                    'text'          => "🚮 Delete " . $key + 1 . "/" . count($data),
-                                    'callback_data' => "file/delete/" . $file['id'] . "-" . $chatId,
-                                ],
-                            ],
-                        ],
+                        'inline_keyboard' => $inlineKeyboard,
                     ]),
                 ]);
             }
