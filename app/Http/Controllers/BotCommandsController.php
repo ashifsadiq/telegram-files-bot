@@ -112,11 +112,11 @@ class BotCommandsController extends Controller
                 'text'          => 'Back ⬆',
                 'callback_data' => "folder/back/" . $parentFolderId,
             ];
+            $paginationRow[] = [
+                'text'          => 'Add Here ➕',
+                'callback_data' => "folder/add/" . $parentFolderId,
+            ];
         }
-        $paginationRow[] = [
-            'text'          => 'Add Here ➕',
-            'callback_data' => "folder/add/" . $parentFolderId,
-        ];
         if ($current_page < $last_page) {
             $paginationRow[] = [
                 'text'          => 'Next ➡️',

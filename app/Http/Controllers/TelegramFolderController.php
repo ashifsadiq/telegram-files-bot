@@ -8,15 +8,16 @@ class TelegramFolderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function getTelegramFilesAndFolders($chatId, $parentFolderId = null, $page = 1, $basePath=''): array
+    public function getTelegramFilesAndFolders($chatId, $parentFolderId = null, $page = 1, $basePath = ''): array
     {
         $telegramFilesController = new TelegramFilesController();
-        $perPage = 10;
+        $perPage                 = 10;
         $response                = $telegramFilesController->index(
-            $chatId, 
-            $parentFolderId, 
+            $chatId,
+            $parentFolderId,
             $page,
-            $perPage
+            $perPage,
+            true,
         );
 
                                           // Extract actual data from response (if it's a JsonResponse)
@@ -31,34 +32,22 @@ class TelegramFolderController extends Controller
         $lengthOfFolders = count($data['folders']['data']);
         $current_page    = $data['folders']['current_page'];
         $last_page       = $data['folders']['last_page'];
-        $inline_keyboard = [];
+        $inline_keyboard = [
+            [
+                'text'          => 'Folder Options ⚙️',
+                'callback_data' => "folder/edit/" . $parentFolderId,
+            ],
+        ];
         if ($lengthOfFolders > 0) {
             foreach ($data['folders']['data'] as $key => $file) {
-                $SNo = (($current_page - 1) * $perPage) + ($key + 1);
-                $filesList .= $SNo . ". " . ($file['name'] ?? 'Unnamed') . "\n";
+                $SNo               = (($current_page - 1) * $perPage) + ($key + 1);
                 $inline_keyboard[] = [
-                    'text'          => $SNo,
+                    'text'          => "$SNo." . ($file['name'] ?? 'Unnamed') . " 📁",
                     'callback_data' => $basePath . $file['id'],
                 ];
             }
         }
-        $inline_keyboard = array_chunk($inline_keyboard, 5);
-        if (count($data['files']['data']) > 0) {
-            $filesList .= "\n<b>Files</b>\n\n";
-            foreach ($data['files']['data'] as $key => $file) {
-                if ($file['file_name']) {
-                    $filesList .= "- " . ($file['file_name'] ?? 'Unnamed') . "\n";
-                } else {
-                    $filesList .= "- " . ($file['type']) . "\n";
-                }
-
-            }
-        }
-        if ($lengthOfFolders > 0) {
-            $filesList .= "\n\n<b>Folders ($current_page/$last_page)</b>\nFiles: ".$data['files']['total'];
-        } else {
-            $filesList .= "\n\nNo Sub Folder found in this folder.";
-        }
+        $inline_keyboard = array_chunk($inline_keyboard, 1);
         return [
             'filesList'       => $filesList,
             'inline_keyboard' => $inline_keyboard,

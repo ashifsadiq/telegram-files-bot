@@ -11,16 +11,21 @@ class TelegramFilesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($user_id = null, $parentFolderId = 0, $page = 1, $perPage = 25)
+    public function index($user_id = null, $parentFolderId = 0, $page = 1, $perPage = 25, $getFolder = true, $getFiles = true)
     {
         if ($user_id) {
-            $folders = TelegramFolder::where('user_id', $user_id)
-                ->where('parent_folder_id', $parentFolderId)
-                ->paginate($perPage, ['*'], 'folders_page', $page);
-
-            $files = TelegramFiles::where('user_id', $user_id)
-                ->where('parent_folder_id', $parentFolderId)
-                ->paginate($perPage, ['*'], null, $page);
+            $folders = [];
+            $files   = [];
+            if ($getFolder) {
+                $folders = TelegramFolder::where('user_id', $user_id)
+                    ->where('parent_folder_id', $parentFolderId)
+                    ->paginate($perPage, ['*'], 'folders_page', $page);
+            }
+            if ($getFiles) {
+                $files = TelegramFiles::where('user_id', $user_id)
+                    ->where('parent_folder_id', $parentFolderId)
+                    ->paginate($perPage, ['*'], null, $page);
+            }
 
             return response()->json([
                 'folders' => $folders,
