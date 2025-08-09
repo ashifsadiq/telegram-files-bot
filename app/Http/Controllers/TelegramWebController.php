@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\TelegramHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 
 class TelegramWebController extends Controller
@@ -115,4 +116,17 @@ class TelegramWebController extends Controller
             'message' => "Webhook deleted successfully",
         ];
     }
+
+    public function migrateFreshSeed(Request $request)
+    {
+        // Correct way: pass command name and options separately
+        Artisan::call('migrate:fresh', [
+            '--seed' => true,
+        ]);
+
+        // Capture output
+        $output = Artisan::output();
+        return back();
+    }
+
 }

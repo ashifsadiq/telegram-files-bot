@@ -33,6 +33,18 @@ const TelegramWebhook = ({ currentWebHookUrl }) => {
             handleSubmit(event)
         }
     }
+    const migrateFreshSeed = async (e) => {
+        e.preventDefault();
+
+        if (confirm("After this, all tables will be dropped and the database will be reseeded (also you will be logged out). Continue?")) {
+            setData('isLoading', true);
+            console.log('User clicked OK');
+            post(route('api.migrateFreshSeed'))
+            // 🔹 Call your Laravel endpoint here
+        } else {
+            console.log('User clicked Cancel');
+        }
+    };
     const handleSubmit = async (e) => {
         e.preventDefault();
         setData('isLoading', true)
@@ -83,6 +95,15 @@ const TelegramWebhook = ({ currentWebHookUrl }) => {
                                     <button type="submit" className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Update</button>
                                 </form>
                             </div>
+                            <div className='border-t-2' />
+                            <form className="space-y-6 w-full" onSubmit={migrateFreshSeed}>
+                                <button
+                                    type="submit"
+                                    className="w-full text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-700 dark:hover:bg-red-800 dark:focus:ring-red-900"
+                                >
+                                    php artisan migrate:fresh --seed
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
