@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Helpers\TelegramHelper;
 use App\Models\TelegramFiles;
 use App\Models\TelegramFolder;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class TelegramFilesController extends Controller
 
             $files = TelegramFiles::where('user_id', $user_id)
                 ->where('parent_folder_id', $parentFolderId)
-                ->paginate($perPage, ['*'], 'files_page', $page);
+                ->paginate($perPage, ['*'], null, $page);
 
             return response()->json([
                 'folders' => $folders,
@@ -29,12 +30,17 @@ class TelegramFilesController extends Controller
 
         return response()->json(['error' => 'User ID is required'], 400);
     }
-    public function getFiles($user_id = null, $parentFolderId = 0, $page = 1)
+    public function getFiles($user_id = null, $parentFolderId = 0, $page = 1, $perPage = 25)
     {
+        $telegramHelper = new TelegramHelper();
+        $telegramHelper->sendMessage([
+            'chat_id' => $user_id,
+            'text'    => "user_id: $user_id\nparentFolderId: $parentFolderId\npage: $page\nperPage: $perPage",
+        ]);
         if ($user_id) {
             $files = TelegramFiles::where('user_id', $user_id)
                 ->where('parent_folder_id', $parentFolderId)
-                ->paginate(25, ['*'], 'files_page', $page);
+                ->paginate($perPage, ['*'], null, $page);
 
             return $files;
         }

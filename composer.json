@@ -44,6 +44,9 @@
         "port":[
             "ssh -p 443 -R0:localhost:8000 a.pinggy.io"
         ],
+        "xampp":[
+            "sudo /Applications/XAMPP/xamppfiles/xampp start"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

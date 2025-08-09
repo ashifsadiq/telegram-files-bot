@@ -202,7 +202,7 @@ class TelegramHelper
                 case 'manageFolders/back/':{
                         $botCommandsController = new BotCommandsController();
                         $folder                = TelegramFolder::find($lastPart);
-                    $botCommandsController->manageFolders(
+                        $botCommandsController->manageFolders(
                             $chatId,
                             $folder->parent_folder_id,
                             null,
@@ -226,6 +226,35 @@ class TelegramHelper
                             $chatId,
                             $lastPart,
                             null,
+                            $message['message_id'],
+                        );
+                        break;
+                    }
+                case "getFiles/page/":{
+                        $str = $lastPart; // Test with "-1010" too
+
+                        $left  = null;
+                        $right = null;
+
+                        if (strpos($str, '-') === 0) {
+                            // Case: starts with a dash → left is null, right is everything after dash
+                            $right = substr($str, 1);
+                        } elseif (strpos($str, '-') !== false) {
+                            // Case: contains a dash, split into two parts
+                            [$left, $right] = explode('-', $str, 2);
+                        } else {
+                            // No dash at all
+                            $left = $str;
+                        }
+                        $this->sendMessage([
+                            'chat_id' => $chatId,
+                            'text'    => "left: $left, right: $right",
+                        ]);
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->getFiles(
+                            $chatId,
+                            $left,
+                            $right,
                             $message['message_id'],
                         );
                         break;

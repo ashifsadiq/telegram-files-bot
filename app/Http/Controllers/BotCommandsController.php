@@ -155,12 +155,15 @@ class BotCommandsController extends Controller
 
     public function getFiles($chatId, $parentFolderId, $page = 1, $messageId = null): true
     {
+        $perPage  = 10;
         $getFiles = new TelegramFilesController()->getFiles(
             $chatId,
             $parentFolderId,
-            $page
-        );
-        foreach ($getFiles as $key => $file) {
+            $page,
+            $perPage
+        )->toArray();
+        $data = $getFiles['data'];
+        foreach ($data as $key => $file) {
             if (isset($file['type']) && $file['type'] === 'photo') {
                 new TelegramHelper()->sendPhoto([
                     'chat_id'      => $chatId,
@@ -170,7 +173,7 @@ class BotCommandsController extends Controller
                         'inline_keyboard' => [
                             [
                                 [
-                                    'text'          => '🚮 Delete',
+                                    'text'          => "🚮 Delete " . $key + 1 . "/" . count($data),
                                     'callback_data' => "file/delete/" . $file['id'] . "-" . $chatId,
                                 ],
                             ],
@@ -179,15 +182,36 @@ class BotCommandsController extends Controller
                 ]);
             }
         }
+        $current_page   = $getFiles['current_page'];
+        $last_page      = $getFiles['last_page'];
+        $total          = $getFiles['total'];
+        $from           = $getFiles['from'];
+        $to             = $getFiles['to'];
+        $message        = '';
+        $inlineKeyboard = [];
+        if ($current_page < $last_page) {
+            $message .= '😊 You have ' . ($total - $to) . 'files left. Press send to continue sending.';
+            $inlineKeyboard[] = [
+                [
+                    'text'          => 'Next ➡️',
+                    'callback_data' => "getFiles/page/$parentFolderId-" . $current_page + 1,
+                ],
+            ];
+        } else {
+            $message .= "You got all files 👍";
+        }
         Storage::disk('local')->put(
             'TelegramFilesController_getFiles.json',
             json_encode($getFiles ?? [], JSON_PRETTY_PRINT)
         );
         $telegramHelper = new TelegramHelper();
         $telegramHelper->sendMessage([
-            'chat_id'    => $chatId,
-            'text'       => 'file saved: TelegramFilesController_getFiles',
-            'parse_mode' => 'HTML',
+            'chat_id'      => $chatId,
+            'text'         => "$message",
+            'reply_markup' => json_encode([
+                'inline_keyboard' => $inlineKeyboard,
+            ]),
+            'parse_mode'   => 'HTML',
         ]);
         return true;
     }
