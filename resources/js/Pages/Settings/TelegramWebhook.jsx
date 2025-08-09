@@ -1,13 +1,33 @@
 import { Head, router, useForm } from '@inertiajs/react'
 import Input from '../../Components/ui/input'
 import axios from 'axios';
-import { Trash2 } from 'lucide-react';
+import { RefreshCcw, Trash2 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 const TelegramWebhook = ({ currentWebHookUrl }) => {
     const { data, setData, errors, setError, reset, post, put, patch, del, get, setDefaults } = useForm({
         base_url: '',
         isLoading: false
     })
+    const resetWebhook = async (e) => {
+        e.preventDefault();
+        setData('isLoading', true)
+        try {
+            const response = await axios.post(route('api.webhook.reset'));
+            if (response.status == 200) {
+                toast.success(response.data.message)
+                router.reload()
+            }
+        } catch (error) {
+            if (error.response?.status === 422) {
+                setError(error.response.data.errors);
+            } else {
+                console.error('Other error:', error);
+            }
+        } finally {
+            setData('isLoading', false)
+            reset()
+        }
+    }
     const deleteWebhook = async (e) => {
         e.preventDefault();
         setData('isLoading', true)
@@ -90,6 +110,9 @@ const TelegramWebhook = ({ currentWebHookUrl }) => {
                             <div className="flex space-x-2 items-center">
                                 <form onSubmit={deleteWebhook}>
                                     <button className="bg-red-500 rounded-lg px-2.5 py-1.5 text-white"><Trash2 /></button>
+                                </form>
+                                <form onSubmit={resetWebhook}>
+                                    <button className="bg-red-500 rounded-lg px-2.5 py-1.5 text-white"><RefreshCcw /></button>
                                 </form>
                                 <form className="space-y-6 w-full" onSubmit={handleSubmit}>
                                     <button type="submit" className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Update</button>

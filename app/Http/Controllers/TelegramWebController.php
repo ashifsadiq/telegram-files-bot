@@ -107,6 +107,25 @@ class TelegramWebController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    public function reset()
+    {
+        try {
+            $telegramHelper = new TelegramHelper();
+            $homeUrl        = request()->getSchemeAndHttpHost() . '/';
+            $telegramHelper->setWebhook([
+                'url' => $homeUrl . 'api/telegram/webhooks/inbound',
+            ]);
+            return [
+                'success' => true,
+                'message' => "Webhook reset successfully" . route('api.webhook.inbound'),
+            ];
+        } catch (\Throwable $th) {
+            return [
+                'success' => true,
+                'message' => $homeUrl . " - " . $th->getMessage(),
+            ];
+        }
+    }
     public function destroy()
     {
         $telegramHelper = new TelegramHelper();
