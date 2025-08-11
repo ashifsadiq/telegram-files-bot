@@ -30,12 +30,10 @@ class BotCommandsController extends Controller
         $last_page           = $getTelegramFilesAndFolders['last_page'];
         $files_count         = $getTelegramFilesAndFolders['files_count'];
         $paginationRow       = [];
-        $inline_keyboard[][] = [
-
+        $inline_keyboard[][] =
             [
-                'text'          => 'Folder ➕',
-                'callback_data' => "manageFolders/add/" . $parentFolderId,
-            ],
+            'text'          => '➕ Folder',
+            'callback_data' => "manageFolders/add/" . $parentFolderId,
         ];
         if ($current_page > 1) {
             $paginationRow[] = [
@@ -48,15 +46,15 @@ class BotCommandsController extends Controller
                 'text'          => 'Back ⬆',
                 'callback_data' => "manageFolders/back/" . $parentFolderId,
             ];
-            $paginationRow[] = [
-                'text'          => 'Add Here ➕',
-                'callback_data' => "folder/add/" . $parentFolderId,
-            ];
         }
         if ($parentFolderId) {
             $paginationRow[] = [
                 'text'          => '⚙️ Folder',
                 'callback_data' => "manageFolders/edit/" . $parentFolderId,
+            ];
+            $paginationRow[] = [
+                'text'          => 'Add Files ➕',
+                'callback_data' => "folder/add/" . $parentFolderId,
             ];
         }
         if ($files_count) {
