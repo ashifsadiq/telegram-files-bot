@@ -2,6 +2,7 @@
 namespace App\Helpers;
 
 use App\Http\Controllers\BotCommandsController;
+use App\Models\CurrentQueue;
 use App\Models\TelegramFolder;
 use App\Models\UploadingQueue;
 use Illuminate\Http\Request;
@@ -56,6 +57,12 @@ class TelegramHelper
     public function sendMessage($params = [])
     {
         $response = $this->telegram->sendMessage($params);
+        return $response;
+    }
+    public function deleteSendMessageText($params = [])
+    {
+        $this->deleteMessage($params);
+        $response = $this->sendMessage($params);
         return $response;
     }
     public function editMessageText($params = []): \Telegram\Bot\Objects\Message  | bool
@@ -191,6 +198,11 @@ class TelegramHelper
                     }
                 case 'manageFolders/add/':{
                         $botCommandsController = new BotCommandsController();
+                        $botCommandsController->addFolder(
+                            chatId: $chatId,
+                            messageId: $message['message_id'],
+                            folderId: $lastPart
+                        );
                         break;
                     }
                 case 'manageFolders/page/':{
@@ -234,6 +246,36 @@ class TelegramHelper
                         );
                         break;
                     }
+                case 'manageFolders/edit/':{
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->editFolder(
+                            $chatId,
+                            $lastPart,
+                            null,
+                            $message['message_id'],
+                        );
+                        break;
+                    }
+                case 'manageFolders/delete/':{
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->deleteFolder(
+                            $chatId,
+                            $lastPart,
+                            null,
+                            $message['message_id'],
+                        );
+                        break;
+                    }
+                case 'manageFolders/rename/':{
+                        $botCommandsController = new BotCommandsController();
+                        $botCommandsController->renameFolder(
+                            $chatId,
+                            $lastPart,
+                            $message['message_id'],
+                        );
+                        break;
+                    }
+                // manageFolders/rename/
                 case "getFiles/page/":{
                         $str = $lastPart; // Test with "-1010" too
 
@@ -312,14 +354,36 @@ class TelegramHelper
         $message           = $request->input('message');
         $chatId            = $message['chat']['id'] ?? null;
         $textGot           = $message['text'];
-        $currentQueueCount = UploadingQueue::where(['user_id' => $chatId])->count();
-        if ($currentQueueCount) {
-            return $this->telegram->sendMessage([
-                'chat_id' => $chatId,
-                'text'    => 'Please Send Files to add press /cancel to stop the process.',
-            ]);
-        }
-        if ($chatId) {
+        $messageId         = $message['message_id'];
+        $currentQueueCount = CurrentQueue::where(['user_id' => $chatId]);
+        if ($currentQueueCount->count()) {
+            $currentQueue = $currentQueueCount->first();
+            if ($currentQueue) {
+                list($basePath, $lastPart) = $this->splitLastPart($currentQueue->name);
+                switch ($basePath) {
+                    case 'BotCommandsController/addFolder/':{
+                            $botCommandsController = new BotCommandsController();
+                            $botCommandsController->addFolder(
+                                $chatId,
+                                $messageId,
+                                $lastPart,
+                                $textGot
+                            );
+                            break;
+                        }
+                    case 'BotCommandsController/renameFolder/':{
+                            $botCommandsController = new BotCommandsController();
+                            $botCommandsController->renameFolder(
+                                $chatId,
+                                $lastPart,
+                                $messageId,
+                                $textGot,
+                            );
+                            break;
+                        }
+                }
+            }
+        } else if ($chatId) {
             return $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text'    => $textGot,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Helpers\TelegramHelper;
 use App\Models\CurrentQueue;
 use App\Models\TelegramFiles;
+use App\Models\TelegramFolder;
 use App\Models\UploadingQueue;
 use App\Models\UploadingQueueFiles;
 use Illuminate\Support\Facades\Log;
@@ -48,7 +49,7 @@ class BotCommandsController extends Controller
         }
         if ($parentFolderId) {
             $paginationRow[] = [
-                'text'          => '✏️ Folder',
+                'text'          => '⚙️ Folder',
                 'callback_data' => "manageFolders/edit/" . $parentFolderId,
             ];
         }
@@ -158,7 +159,126 @@ class BotCommandsController extends Controller
         // abort(200);
         return true;
     }
+    public function renameFolder($chatId, $parentFolderId, $messageId = null, $foldername = null)
+    {
+        $telegramHelper = new TelegramHelper();
+        if (! $foldername) {
+            // Delete previous queue entries
+            CurrentQueue::where(['user_id' => $chatId])->delete();
+            // Create a new queue entry
+            CurrentQueue::create([
+                'user_id' => $chatId,
+                'name'    => "BotCommandsController/renameFolder/$parentFolderId",
+            ]);
+            $telegramHelper->deleteSendMessageText([
+                'chat_id'    => $chatId,
+                'message_id' => $messageId,
+                'text'       => "Please share me the new Folder name.",
+            ]);
+        } else {
+            $folderCount = TelegramFolder::where([
+                'user_id'          => $chatId,
+                'parent_folder_id' => $parentFolderId,
+                'name'             => $foldername,
+            ])->count();
+            if ($folderCount == 0) {
+                $telegramHelper->deleteMessage([
+                    'chat_id'    => $chatId,
+                    'message_id' => $messageId - 1,
+                ]);
+                TelegramFolder::where([
+                    'user_id' => $chatId,
+                    'id'      => $parentFolderId,
+                ])->update([
+                    'name' => $foldername,
+                ]);
+                $this->manageFolders(
+                    $chatId,
+                    $parentFolderId,
+                    null,
+                );
+            } else {
+                $telegramHelper->sendMessage([
+                    'chat_id' => $chatId,
+                    'text'    => 'Looks like folder name already exist, try send another',
+                ]);
+            }
+        }
+    }
+    // Handles Telegram + DB deletion
+    public function deleteFolder($chatId, $parentFolderId, $page = 1, $messageId = null)
+    {
+        $telegramHelper           = new TelegramHelper();
+        $telegramFolderController = new TelegramFolderController();
+        $parentFolder             = TelegramFolder::find($parentFolderId);
+        $deleteResult             = $telegramFolderController->deleteFolder(
+            $chatId, // consider mapping Chat ID to User ID if needed
+            $parentFolderId
+        );
 
+        if (($deleteResult)) {
+            $telegramHelper->deleteMessage([
+                'chat_id'    => $chatId,
+                'message_id' => $messageId,
+            ]);
+            $botCommandsController = new BotCommandsController();
+            $botCommandsController->manageFolders(
+                $chatId, $parentFolder->parent_folder_id, null
+            );
+        } else {
+            $telegramHelper->sendMessage([
+                'chat_id' => $chatId,
+                'text'    => 'Something went wrong on delete folder parentFolderId: ' . $parentFolderId,
+            ]);
+        }
+        return true;
+    }
+    public function editFolder($chatId, $parentFolderId, $page = 1, $messageId = null): true
+    {
+
+        $inline_keyboard = [
+            [
+                [
+                    'text'          => "🚮 Delete Folder",
+                    'callback_data' => "manageFolders/delete/" . $parentFolderId,
+                ],
+            ],
+            [
+                [
+                    'text'          => "✏️ Rename Folder",
+                    'callback_data' => "manageFolders/rename/" . $parentFolderId,
+                ],
+            ],
+            [
+                [
+                    'text'          => 'Back ⬆',
+                    'callback_data' => "manageFolders/open/" . $parentFolderId,
+                ],
+            ],
+        ];
+        $telegramHelper = new TelegramHelper();
+        if ($messageId) {
+            $telegramHelper->editMessageText([
+                'chat_id'      => $chatId,
+                'message_id'   => $messageId,
+                'text'         => 'Edit Folder ⚙️',
+                'parse_mode'   => 'HTML',
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => $inline_keyboard,
+                ]),
+            ]);
+        } else {
+            $telegramHelper->sendMessage([
+                'chat_id'      => $chatId,
+                'text'         => 'Aaha!',
+                'parse_mode'   => 'HTML',
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => $inline_keyboard,
+                ]),
+            ]);
+        }
+        return true;
+    }
     public function getFiles($chatId, $parentFolderId, $page = 1, $messageId = null): true
     {
         $perPage                 = 10;
@@ -224,17 +344,51 @@ class BotCommandsController extends Controller
         ]);
         return true;
     }
-    public function addFolder($chatId, $messageId, $folderId): void
+    public function addFolder($chatId, $messageId, $folderId, $foldername = null): void
     {
         $telegramHelper = new TelegramHelper();
+        if (! $foldername) {
+            // Delete previous queue entries
+            CurrentQueue::where(['user_id' => $chatId])->delete();
+            // Create a new queue entry
+            CurrentQueue::create([
+                'user_id' => $chatId,
+                'name'    => "BotCommandsController/addFolder/$folderId",
+            ]);
+            $telegramHelper->editMessageText([
+                'chat_id'    => $chatId,
+                'message_id' => $messageId,
+                'text'       => "Please share me the Folder name.",
+            ]);
+        } else {
+            $folderCount = TelegramFolder::where([
+                'user_id'          => $chatId,
+                'parent_folder_id' => $folderId,
+                'name'             => $foldername,
+            ])->count();
+            if ($folderCount == 0) {
+                $telegramHelper->deleteMessage([
+                    'chat_id'    => $chatId,
+                    'message_id' => $messageId - 1,
+                ]);
+                TelegramFolder::create([
+                    'user_id'          => $chatId,
+                    'parent_folder_id' => $folderId,
+                    'name'             => $foldername,
+                ]);
+                $this->manageFolders(
+                    $chatId,
+                    $folderId,
+                    null,
+                );
+            } else {
+                $telegramHelper->sendMessage([
+                    'chat_id' => $chatId,
+                    'text'    => 'Looks like folder name already exist, try send another',
+                ]);
+            }
 
-        // Delete previous queue entries
-        CurrentQueue::where(['user_id' => $chatId])->delete();
-        // Create a new queue entry
-        CurrentQueue::create([
-            'user_id' => $chatId,
-            'name'    => "BotCommandsController/addFolder/$folderId",
-        ]);
+        }
     }
     public function filesAddCurrentQueue($chatId, $messageId, $folderId): void
     {

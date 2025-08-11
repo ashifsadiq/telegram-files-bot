@@ -78,4 +78,39 @@ class TelegramFolderController extends Controller
             'files_total'     => $data['filesCount'],
         ];
     }
+    public function renameFolder($userID, $parentFolderId, $folderName)
+    {
+        try {
+            if (! is_null($parentFolderId) & ! is_null($folderName)) {
+                TelegramFolder::where([
+                    'user_id' => $userID,
+                    'id'      => $parentFolderId,
+                ])->update([
+                    'name' => $folderName,
+                ]);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+    }
+    public function deleteFolder($userID, $parentFolderId)
+    {
+        try {
+            if (! is_null($parentFolderId)) {
+                TelegramFolder::where([
+                    'user_id' => $userID,
+                    'id'      => $parentFolderId,
+                ])->delete();
+                return true;
+            } else {
+                return false;
+            }
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+
+    }
 }

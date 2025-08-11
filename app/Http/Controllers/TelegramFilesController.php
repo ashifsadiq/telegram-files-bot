@@ -19,6 +19,7 @@ class TelegramFilesController extends Controller
             if ($getFolder) {
                 $folders = TelegramFolder::where('user_id', $user_id)
                     ->where('parent_folder_id', $parentFolderId)
+                    ->orderBy('name', 'asc')
                     ->paginate($perPage, ['*'], 'folders_page', $page);
             }
             $filesCount = TelegramFiles::where('user_id', $user_id)
