@@ -193,7 +193,7 @@ class TelegramHelper
                     }
                 case 'folder/done/':{
                         $botCommandsController = new BotCommandsController();
-                        $botCommandsController->doneUploadingQueueFiles($chatId);
+                        $botCommandsController->doneUploadingQueueFiles($chatId, $message['message_id']);
                         break;
                     }
                 case 'manageFolders/add/':{
@@ -349,6 +349,18 @@ class TelegramHelper
     {
         $this->telegram->sendPhoto($params);
     }
+    public function sendAudio($params = [])
+    {
+        $this->telegram->sendAudio($params);
+    }
+    public function sendDocument($params = [])
+    {
+        $this->telegram->sendDocument($params);
+    }
+    public function sendVideo($params = [])
+    {
+        $this->telegram->sendVideo($params);
+    }
     public function manageTextSend(Request $request)
     {
         $message           = $request->input('message');
@@ -413,8 +425,7 @@ class TelegramHelper
                     ]
                 )
             );
-        }
-        if ($chatId) {
+        } else if ($chatId) {
             return $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text'    => 'managePhotoSend',
@@ -423,20 +434,58 @@ class TelegramHelper
     }
     public function manageVideoSend(Request $request)
     {
-        $message = $request->input('message');
-        $chatId  = $message['chat']['id'] ?? null;
-        if ($chatId) {
+        $message        = $request->input('message');
+        $chatId         = $message['chat']['id'] ?? null;
+        $type           = 'video';
+        $message        = $request->input('message');
+        $chatId         = $message['chat']['id'] ?? null;
+        $uploadingQueue = UploadingQueue::where(['user_id' => $chatId])->first();
+        $video          = ($message[$type]);
+        $caption        = $message['caption'] ?? null;
+        if ($uploadingQueue && isset($video)) {
+            $saveUploadingQueueFiles = new BotCommandsController();
+            return $saveUploadingQueueFiles->saveUploadingQueueFiles(
+                array_merge(
+                    $video,
+                    [
+                        'caption'             => $caption,
+                        'type'                => $type,
+                        'uploading_queues_id' => $uploadingQueue->id,
+                        'chat_id'             => $chatId,
+                    ]
+                )
+            );
+        } else if ($chatId) {
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
-                'text'    => 'manageVideoSend',
+                'text'    => json_encode($message),
             ]);
         }
     }
     public function manageDocumentSend(Request $request)
     {
-        $message = $request->input('message');
-        $chatId  = $message['chat']['id'] ?? null;
-        if ($chatId) {
+        $message        = $request->input('message');
+        $chatId         = $message['chat']['id'] ?? null;
+        $type           = 'document';
+        $message        = $request->input('message');
+        $chatId         = $message['chat']['id'] ?? null;
+        $uploadingQueue = UploadingQueue::where(['user_id' => $chatId])->first();
+        $video          = ($message[$type]);
+        $caption        = $message['caption'] ?? null;
+        if ($uploadingQueue && isset($video)) {
+            $saveUploadingQueueFiles = new BotCommandsController();
+            return $saveUploadingQueueFiles->saveUploadingQueueFiles(
+                array_merge(
+                    $video,
+                    [
+                        'caption'             => $caption,
+                        'type'                => $type,
+                        'uploading_queues_id' => $uploadingQueue->id,
+                        'chat_id'             => $chatId,
+                    ]
+                )
+            );
+        } else if ($chatId) {
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text'    => 'manageDocumentSend',

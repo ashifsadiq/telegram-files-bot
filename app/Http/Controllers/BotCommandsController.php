@@ -290,17 +290,29 @@ class BotCommandsController extends Controller
             $perPage
         )->toArray();
         $data = $getFiles['data'];
-        foreach ($data as $key => $file) {
-            if (isset($file['type']) && $file['type'] === 'photo') {
-                $inlineKeyboard = [
+        $telegramHelper = new TelegramHelper();
+        $telegramHelper->deleteMessage([
+            'chat_id'    => $chatId,
+            'message_id' => $messageId,
+        ]);
+        function deleteButton($text, $callback_data)
+        {
+            return [
+                [
                     [
-                        [
-                            'text'          => "🚮 Delete " . $key + 1 . "/" . count($data),
-                            'callback_data' => "file/delete/" . $file['id'] . "-" . $chatId,
-                        ],
+                        'text'          => $text,
+                        'callback_data' => $callback_data,
                     ],
-                ];
-                $telegramHelper = new TelegramHelper();
+                ],
+            ];
+        }
+        foreach ($data as $key => $file) {
+            $inlineKeyboard = deleteButton(
+                "🚮 Delete " . $key + 1 . "/" . count($data),
+                "file/delete/" . $file['id']
+            );
+            $telegramHelper = new TelegramHelper();
+            if (isset($file['type']) && $file['type'] === 'photo') {
                 $telegramHelper->sendPhoto([
                     'chat_id'      => $chatId,
                     'photo'        => $file['file_id'], // Must be a file_id, URL, or InputFile (resource)
@@ -308,6 +320,20 @@ class BotCommandsController extends Controller
                     'reply_markup' => json_encode([
                         'inline_keyboard' => $inlineKeyboard,
                     ]),
+                ]);
+            } else if (isset($file['type']) && $file['type'] === 'video') {
+                $telegramHelper->sendVideo([
+                    'chat_id'      => $chatId,
+                    'video'        => $file['file_id'], // Must be a file_id, URL, or InputFile (resource)
+                    'caption'      => $file['caption'],
+                    'reply_markup' => json_encode([
+                        'inline_keyboard' => $inlineKeyboard,
+                    ]),
+                ]);
+            } else {
+                $telegramHelper->sendMessage([
+                    'chat_id' => $chatId,
+                    'text'    => print_r($file),
                 ]);
             }
         }
@@ -457,7 +483,7 @@ class BotCommandsController extends Controller
 
         return true;
     }
-    public function doneUploadingQueueFiles($chatId)
+    public function doneUploadingQueueFiles($chatId, $messageID)
     {
         if (! $chatId) {
             return;
@@ -498,6 +524,18 @@ class BotCommandsController extends Controller
 
         // Delete all queues for this user
         UploadingQueue::where('user_id', $chatId)->delete();
+        $telegramHelper = new TelegramHelper();
+        if ($messageID) {
+            $telegramHelper->deleteMessage([
+                'chat_id'    => $chatId,
+                'message_id' => $messageID,
+            ]);
+            $this->manageFolders(
+                $chatId,
+                $queue->parent_folder_id,
+                null,
+            );
+        }
     }
 
     public function formatBytes($bytes, $precision = 2)
