@@ -189,6 +189,10 @@ class TelegramHelper
                         $botCommandsController->doneUploadingQueueFiles($chatId);
                         break;
                     }
+                case 'manageFolders/add/':{
+                        $botCommandsController = new BotCommandsController();
+                        break;
+                    }
                 case 'manageFolders/page/':{
                         $botCommandsController = new BotCommandsController();
                         $botCommandsController->manageFolders(

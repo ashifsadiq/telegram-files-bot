@@ -23,12 +23,17 @@ class BotCommandsController extends Controller
             $page,
             'manageFolders/open/'
         );
-        $filesList       = $getTelegramFilesAndFolders['filesList'];
-        $inline_keyboard = $getTelegramFilesAndFolders['inline_keyboard'];
-        $current_page    = $getTelegramFilesAndFolders['current_page'];
-        $last_page       = $getTelegramFilesAndFolders['last_page'];
-        $files_count     = $getTelegramFilesAndFolders['files_count'];
-        $paginationRow   = [];
+        $filesList           = $getTelegramFilesAndFolders['filesList'];
+        $inline_keyboard     = $getTelegramFilesAndFolders['inline_keyboard'];
+        $current_page        = $getTelegramFilesAndFolders['current_page'];
+        $last_page           = $getTelegramFilesAndFolders['last_page'];
+        $files_count         = $getTelegramFilesAndFolders['files_count'];
+        $paginationRow       = [];
+        $inline_keyboard[][] =
+            [
+            'text'          => '➕ Folder',
+            'callback_data' => "manageFolders/add/" . $parentFolderId,
+        ];
         if ($current_page > 1) {
             $paginationRow[] = [
                 'text'          => '⬅️ Previous',
@@ -100,7 +105,8 @@ class BotCommandsController extends Controller
         $inline_keyboard = $getTelegramFilesAndFolders['inline_keyboard'];
         $current_page    = $getTelegramFilesAndFolders['current_page'];
         $last_page       = $getTelegramFilesAndFolders['last_page'];
-        $paginationRow   = [];
+
+        $paginationRow = [];
         if ($current_page > 1) {
             $paginationRow[] = [
                 'text'          => '⬅️ Previous',
@@ -218,13 +224,25 @@ class BotCommandsController extends Controller
         ]);
         return true;
     }
+    public function addFolder($chatId, $messageId, $folderId): void
+    {
+        $telegramHelper = new TelegramHelper();
+
+        // Delete previous queue entries
+        CurrentQueue::where(['user_id' => $chatId])->delete();
+        // Create a new queue entry
+        CurrentQueue::create([
+            'user_id' => $chatId,
+            'name'    => "BotCommandsController/addFolder/$folderId",
+        ]);
+    }
     public function filesAddCurrentQueue($chatId, $messageId, $folderId): void
     {
         $telegramHelper = new TelegramHelper();
 
         // Delete previous queue entries
         CurrentQueue::where(['user_id' => $chatId])->delete();
-
+        UploadingQueue::where(['user_id' => $chatId])->delete();
         $uploadingQueue = UploadingQueue::create([
             'parent_folder_id' => $folderId,
             'user_id'          => $chatId,
