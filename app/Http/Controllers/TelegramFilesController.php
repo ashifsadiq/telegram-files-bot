@@ -41,11 +41,6 @@ class TelegramFilesController extends Controller
     }
     public function getFiles($user_id = null, $parentFolderId = 0, $page = 1, $perPage = 25)
     {
-        $telegramHelper = new TelegramHelper();
-        $telegramHelper->sendMessage([
-            'chat_id' => $user_id,
-            'text'    => "user_id: $user_id\nparentFolderId: $parentFolderId\npage: $page\nperPage: $perPage",
-        ]);
         if ($user_id) {
             $files = TelegramFiles::where('user_id', $user_id)
                 ->where('parent_folder_id', $parentFolderId)

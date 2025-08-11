@@ -470,13 +470,13 @@ class TelegramHelper
         $message        = $request->input('message');
         $chatId         = $message['chat']['id'] ?? null;
         $uploadingQueue = UploadingQueue::where(['user_id' => $chatId])->first();
-        $video          = ($message[$type]);
+        $document          = ($message[$type]);
         $caption        = $message['caption'] ?? null;
-        if ($uploadingQueue && isset($video)) {
+        if ($uploadingQueue && isset($document)) {
             $saveUploadingQueueFiles = new BotCommandsController();
             return $saveUploadingQueueFiles->saveUploadingQueueFiles(
                 array_merge(
-                    $video,
+                    $document,
                     [
                         'caption'             => $caption,
                         'type'                => $type,

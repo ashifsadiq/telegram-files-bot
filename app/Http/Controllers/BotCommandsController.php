@@ -30,10 +30,12 @@ class BotCommandsController extends Controller
         $last_page           = $getTelegramFilesAndFolders['last_page'];
         $files_count         = $getTelegramFilesAndFolders['files_count'];
         $paginationRow       = [];
-        $inline_keyboard[][] =
+        $inline_keyboard[][] = [
+
             [
-            'text'          => '➕ Folder',
-            'callback_data' => "manageFolders/add/" . $parentFolderId,
+                'text'          => 'Folder ➕',
+                'callback_data' => "manageFolders/add/" . $parentFolderId,
+            ],
         ];
         if ($current_page > 1) {
             $paginationRow[] = [
@@ -45,6 +47,10 @@ class BotCommandsController extends Controller
             $paginationRow[] = [
                 'text'          => 'Back ⬆',
                 'callback_data' => "manageFolders/back/" . $parentFolderId,
+            ];
+            $paginationRow[] = [
+                'text'          => 'Add Here ➕',
+                'callback_data' => "folder/add/" . $parentFolderId,
             ];
         }
         if ($parentFolderId) {
@@ -289,7 +295,7 @@ class BotCommandsController extends Controller
             $page,
             $perPage
         )->toArray();
-        $data = $getFiles['data'];
+        $data           = $getFiles['data'];
         $telegramHelper = new TelegramHelper();
         $telegramHelper->deleteMessage([
             'chat_id'    => $chatId,
@@ -330,6 +336,15 @@ class BotCommandsController extends Controller
                         'inline_keyboard' => $inlineKeyboard,
                     ]),
                 ]);
+            } else if (isset($file['type']) && $file['type'] === 'document') {
+                $telegramHelper->sendDocument([
+                    'chat_id'      => $chatId,
+                    'document'     => $file['file_id'], // Must be a file_id, URL, or InputFile (resource)
+                    'caption'      => $file['caption'],
+                    'reply_markup' => json_encode([
+                        'inline_keyboard' => $inlineKeyboard,
+                    ]),
+                ]);
             } else {
                 $telegramHelper->sendMessage([
                     'chat_id' => $chatId,
@@ -342,32 +357,30 @@ class BotCommandsController extends Controller
         $total          = $getFiles['total'];
         $from           = $getFiles['from'];
         $to             = $getFiles['to'];
-        $message        = '';
         $inlineKeyboard = [];
         if ($current_page < $last_page) {
-            $message .= '😊 You have ' . ($total - $to) . 'files left. Press send to continue sending.';
-            $inlineKeyboard[] = [
-                [
-                    'text'          => 'Next ➡️',
-                    'callback_data' => "getFiles/page/$parentFolderId-" . $current_page + 1,
-                ],
-            ];
+            $message        = '😊 You have ' . ($total - $to) . 'files left. Press send to continue sending.';
+            $telegramHelper = new TelegramHelper();
+            $telegramHelper->sendMessage([
+                'chat_id'      => $chatId,
+                'text'         => "$message",
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => [
+                        [
+                            'text'          => 'Next ➡️',
+                            'callback_data' => "getFiles/page/$parentFolderId-" . $current_page + 1,
+                        ],
+                    ],
+                ]),
+                'parse_mode'   => 'HTML',
+            ]);
         } else {
-            $message .= "You got all files 👍";
+            $this->manageFolders($chatId, $parentFolderId, null);
         }
         Storage::disk('local')->put(
             'TelegramFilesController_getFiles.json',
             json_encode($getFiles ?? [], JSON_PRETTY_PRINT)
         );
-        $telegramHelper = new TelegramHelper();
-        $telegramHelper->sendMessage([
-            'chat_id'      => $chatId,
-            'text'         => "$message",
-            'reply_markup' => json_encode([
-                'inline_keyboard' => $inlineKeyboard,
-            ]),
-            'parse_mode'   => 'HTML',
-        ]);
         return true;
     }
     public function addFolder($chatId, $messageId, $folderId, $foldername = null): void
