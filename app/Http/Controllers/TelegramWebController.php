@@ -66,7 +66,7 @@ class TelegramWebController extends Controller
             $telegramHelper = new TelegramHelper();
             $telegramHelper->sendMessage([
                 'chat_id'    => env('DEVELOPER_TG_ID'),
-                'text'       => 'Telegram bot error:' . $th->getMessage()."\File: ".$th->getFile()."\Line: ".$th->getLine(),
+                'text'       => 'Telegram bot error:' . $th->getMessage()."\nFile: ".$th->getFile()."\nLine: ".$th->getLine(),
                 'parse_mode' => 'HTML',
             ]);
             \Log::error('Telegram bot error:', ['exception' => $th]);
