@@ -18,7 +18,8 @@ class TelegramWebController extends Controller
         try {
             $message = $request->input('message') ?? $request->input('edited_message');
             $chatId  = $message['chat']['id'] ?? null;
-            $user    = TelegramUsers::firstOrCreate([
+            \Log::info('', $message);
+            $user = TelegramUsers::firstOrCreate([
                 'user_id' => $chatId,
             ], [
                 'user_id'    => $chatId,
@@ -66,7 +67,7 @@ class TelegramWebController extends Controller
             $telegramHelper = new TelegramHelper();
             $telegramHelper->sendMessage([
                 'chat_id'    => env('DEVELOPER_TG_ID'),
-                'text'       => 'Telegram bot error:' . $th->getMessage()."\nFile: ".$th->getFile()."\nLine: ".$th->getLine(),
+                'text'       => 'Telegram bot error:' . $th->getMessage() . "\nFile: " . $th->getFile() . "\nLine: " . $th->getLine(),
                 'parse_mode' => 'HTML',
             ]);
             \Log::error('Telegram bot error:', ['exception' => $th]);
