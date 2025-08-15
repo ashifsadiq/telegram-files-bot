@@ -6,6 +6,8 @@
 
 # Telegram Cloud Bot
 
+Live bot [TG Cloud Bot (Beta)](https://t.me/ASFcloudbot)
+
 ## About
 
 Telegram Cloud Bot is a modern, open-source Telegram Bot built with Laravel, React, and various third-party APIs. It offers seamless file management and messaging functionalities directly via Telegram.
