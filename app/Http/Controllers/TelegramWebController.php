@@ -18,8 +18,8 @@ class TelegramWebController extends Controller
         try {
             $message = $request->input('message') ?? $request->input('edited_message');
             $chatId  = $message['chat']['id'] ?? null;
-            \Log::info('', $message);
             if ($chatId) {
+                \Log::info('', $message);
                 $user = TelegramUsers::firstOrCreate([
                     'user_id' => $chatId,
                 ], [
