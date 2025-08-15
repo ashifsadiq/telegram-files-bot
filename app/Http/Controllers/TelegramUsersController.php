@@ -16,7 +16,7 @@ class TelegramUsersController extends Controller
     public function firstOrCreateTelegramUsers(Request $request)
     {
         try {
-            $message = $request->input('message') ?? $request->input('edited_message') ?? $request->input('callback_query');
+            $message = $request->input('message') ?? $request->input('edited_message') ?? $request->input('callback_query')['message'];
             if (! $message) {
                 $telegramHelper = new TelegramHelper();
                 $telegramHelper->sendMessage([
@@ -57,7 +57,7 @@ class TelegramUsersController extends Controller
                 ]);
                 $telegramHelper->sendMessage([
                     'chat_id' => env('DEVELOPER_TG_ID'),
-                    'text'    => json_encode($request->all()),
+                    'text'    => json_encode($message),
                 ]);
             }
         } catch (\Throwable $th) {
