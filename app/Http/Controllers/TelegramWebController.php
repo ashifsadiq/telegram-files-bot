@@ -23,8 +23,6 @@ class TelegramWebController extends Controller
             ], [
                 'user_id'    => $chatId,
                 'first_name' => $message['chat']['first_name'],
-                'last_name'  => $message['chat']['last_name'],
-                'username'   => $message['chat']['username'],
             ]);
             $user->update([
                 'used' => now(),
