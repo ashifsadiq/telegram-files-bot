@@ -17,20 +17,8 @@ class TelegramWebController extends Controller
         // \Log::info('Incoming telegram update:', $request->all());
         try {
             $message = $request->input('message') ?? $request->input('edited_message');
-            $chatId  = $message['chat']['id'] ?? null;
-            if ($chatId) {
-                \Log::info('', $message);
-                $user = TelegramUsers::firstOrCreate([
-                    'user_id' => $chatId,
-                ], [
-                    'user_id'    => $chatId,
-                    'first_name' => 'first_name',
-                ]);
-                $user->update([
-                    'used' => now(),
-                ]);
-                $user->save();
-            }
+            $telegramUsersController = new TelegramUsersController();
+            $telegramUsersController->firstOrCreateTelegramUsers($request);
             $telegramHelper = new TelegramHelper();
             if (isset($message['entities'][0]['type']) && ($message['entities'][0]['type'] == 'bot_command')) {
                 $telegramHelper->handleBotCommands($request);

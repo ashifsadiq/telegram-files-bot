@@ -4,6 +4,7 @@ namespace App\Helpers;
 use App\Http\Controllers\BotCommandsController;
 use App\Models\CurrentQueue;
 use App\Models\TelegramFolder;
+use App\Models\TelegramUsers;
 use App\Models\UploadingQueue;
 use Illuminate\Http\Request;
 use Telegram\Bot\Api;
@@ -470,7 +471,7 @@ class TelegramHelper
         $message        = $request->input('message');
         $chatId         = $message['chat']['id'] ?? null;
         $uploadingQueue = UploadingQueue::where(['user_id' => $chatId])->first();
-        $document          = ($message[$type]);
+        $document       = ($message[$type]);
         $caption        = $message['caption'] ?? null;
         if ($uploadingQueue && isset($document)) {
             $saveUploadingQueueFiles = new BotCommandsController();
