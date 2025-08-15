@@ -12,5 +12,5 @@ class TelegramUsers extends Model
     public $incrementing  = false; // important: string PKs are not auto-incrementing
     protected $keyType    = 'string';
 
-    protected $fillable = ['user_id', 'first_name', 'last_name', 'username'];
+    protected $fillable = ['user_id', 'first_name', 'last_name', 'username', 'used'];
 }
