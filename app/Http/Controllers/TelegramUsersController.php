@@ -41,11 +41,12 @@ class TelegramUsersController extends Controller
                 ], [
                     'user_id'    => $chatId,
                     'first_name' => $firstName,
-                    'last_name'  => $lastname,
-                    'username'   => $username,
                 ]);
                 $user->update([
-                    'used' => now(),
+                    'used'      => now(),
+                    'first_name' => $firstName,
+                    'last_name' => $lastname,
+                    'username'  => $username,
                 ]);
                 $user->save();
             } else {
