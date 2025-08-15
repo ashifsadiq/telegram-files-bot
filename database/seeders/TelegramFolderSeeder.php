@@ -13,14 +13,20 @@ class TelegramFolderSeeder extends Seeder
     public function run(): void
     {
         if (env('APP_ENV') == 'local') {
-            for ($i = 0; $i < fake()->numberBetween(500, 1999); $i++) {
+            // parent folder create
+            for ($i = 0; $i < fake()->numberBetween(500, 1000); $i++) {
+                TelegramFolder::create([
+                    'name'     => fake()->name(),
+                    'sharable' => fake()->boolean(20),
+                    'user_id'  => env('DEVELOPER_TG_ID'),
+                ]);
+            }
+            // children folders
+            for ($i = 0; $i < fake()->numberBetween(500, 1000); $i++) {
                 TelegramFolder::create([
                     'name'             => fake()->name(),
                     'sharable'         => fake()->boolean(20),
-                    'parent_folder_id' => fake()->randomElement([
-                        null,
-                        optional(TelegramFolder::inRandomOrder()->first())->id,
-                    ]),
+                    'parent_folder_id' => optional(TelegramFolder::inRandomOrder()->first())->id,
                     'user_id'          => env('DEVELOPER_TG_ID'),
                 ]);
             }
@@ -33,7 +39,7 @@ class TelegramFolderSeeder extends Seeder
                     "file_unique_id"   => "AQADY8gxG5SDsFR9",
                     "file_size"        => "82730",
                     "caption"          => fake()->paragraph(),
-                    "parent_folder_id" => null,
+                    "parent_folder_id" => 1, //optional(TelegramFolder::inRandomOrder()->first())->id,
                     "user_id"          => "824045233",
                 ]);
             }

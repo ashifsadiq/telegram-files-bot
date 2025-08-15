@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\TelegramHelper;
+use App\Models\TelegramUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
@@ -15,7 +16,20 @@ class TelegramWebController extends Controller
     {
         // \Log::info('Incoming telegram update:', $request->all());
         try {
-            $message        = $request->input('message') ?? $request->input('edited_message');
+            $message = $request->input('message') ?? $request->input('edited_message');
+            $chatId  = $message['chat']['id'] ?? null;
+            $user    = TelegramUsers::firstOrCreate([
+                'user_id' => $chatId,
+            ], [
+                'user_id'    => $chatId,
+                'first_name' => $message['chat']['first_name'],
+                'last_name'  => $message['chat']['last_name'],
+                'username'   => $message['chat']['username'],
+            ]);
+            $user->update([
+                'used' => now(),
+            ]);
+            $user->save();
             $telegramHelper = new TelegramHelper();
             if (isset($message['entities'][0]['type']) && ($message['entities'][0]['type'] == 'bot_command')) {
                 $telegramHelper->handleBotCommands($request);
@@ -52,7 +66,7 @@ class TelegramWebController extends Controller
             }
         } catch (\Throwable $th) {
             $telegramHelper->sendMessage([
-                'chat_id'    => '824045233',
+                'chat_id'    => env('DEVELOPER_TG_ID'),
                 'text'       => 'Telegram bot error:' . $th->getMessage(),
                 'parse_mode' => 'HTML',
             ]);

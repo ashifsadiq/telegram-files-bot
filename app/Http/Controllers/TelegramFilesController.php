@@ -11,7 +11,7 @@ class TelegramFilesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($user_id = null, $parentFolderId = 0, $page = 1, $perPage = 25, $getFolder = true, $getFiles = true)
+    public function index($user_id = null, $parentFolderId = null, $page = 1, $perPage = 25, $getFolder = true, $getFiles = true)
     {
         if ($user_id) {
             $folders = [];

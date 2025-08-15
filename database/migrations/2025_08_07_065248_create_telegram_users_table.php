@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name')->nullable();
             $table->string('username')->nullable();
+            $table->timestamp('used')->default(now());
             $table->timestamps();
         });
     }
