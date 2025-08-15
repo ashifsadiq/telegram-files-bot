@@ -65,6 +65,7 @@ class TelegramWebController extends Controller
                 $telegramHelper->manageUnknownSend($request);
             }
         } catch (\Throwable $th) {
+            $telegramHelper = new TelegramHelper();
             $telegramHelper->sendMessage([
                 'chat_id'    => env('DEVELOPER_TG_ID'),
                 'text'       => 'Telegram bot error:' . $th->getMessage(),
