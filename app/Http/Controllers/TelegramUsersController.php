@@ -29,14 +29,20 @@ class TelegramUsersController extends Controller
                 ]);
                 return;
             }
-            $chatId = $message['chat']['id'] ?? null;
+            $chatId    = $message['chat']['id'] ?? null;
+            $firstName = $message['chat']['first_name'] ?? 'NA';
+            $lastname  = $message['chat']['last_name'] ?? null;
+            $username  = $message['chat']['username'] ?? null;
+
             if ($chatId) {
                 \Log::info('', $message);
                 $user = TelegramUsers::firstOrCreate([
                     'user_id' => $chatId,
                 ], [
                     'user_id'    => $chatId,
-                    'first_name' => 'first_name',
+                    'first_name' => $firstName,
+                    'last_name'  => $lastname,
+                    'username'   => $username,
                 ]);
                 $user->update([
                     'used' => now(),
